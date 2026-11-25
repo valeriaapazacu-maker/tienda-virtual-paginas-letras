@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react"
 import CategoryFilter from "@/components/CategoryFilter"
 import ProductList from "@/components/ProductList"
+import Recomendados from "@/components/Recomendados"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getCategorias, getProductos } from "@/services/api"
 import type { Categoria, Producto } from "@/types"
 
+const pill = "rounded-full border border-neutral-300 px-4 py-1.5 text-sm transition"
+
 export default function Catalogo({ busqueda }: { busqueda: string }) {
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [categoriaSel, setCategoriaSel] = useState<number | null>(null)
+  const [soloOfertas, setSoloOfertas] = useState(false)
+  const [soloDisponibles, setSoloDisponibles] = useState(false)
+  const [orden, setOrden] = useState("")
+  const [seleccionado, setSeleccionado] = useState<Producto | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -41,11 +48,20 @@ export default function Catalogo({ busqueda }: { busqueda: string }) {
   }
 
   const termino = busqueda.trim().toLowerCase()
-  const productosFiltrados = productos.filter(
-    (p) =>
-      (categoriaSel === null || p.categoria === categoriaSel) &&
-      (termino === "" || `${p.nombre} ${p.descripcion} ${p.categoria_nombre}`.toLowerCase().includes(termino))
-  )
+  const productosFiltrados = productos
+    .filter(
+      (p) =>
+        (categoriaSel === null || p.categoria === categoriaSel) &&
+        (!soloOfertas || p.descuento > 0) &&
+        (!soloDisponibles || p.stock > 0) &&
+        (termino === "" || `${p.nombre} ${p.descripcion} ${p.categoria_nombre}`.toLowerCase().includes(termino))
+    )
+    .sort((a, b) => {
+      if (orden === "precio-asc") return Number(a.precio_final) - Number(b.precio_final)
+      if (orden === "precio-desc") return Number(b.precio_final) - Number(a.precio_final)
+      if (orden === "nombre") return a.nombre.localeCompare(b.nombre, "es")
+      return 0
+    })
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
@@ -60,6 +76,36 @@ export default function Catalogo({ busqueda }: { busqueda: string }) {
       </div>
 
       <CategoryFilter categorias={categorias} seleccionada={categoriaSel} onSelect={setCategoriaSel} />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          aria-pressed={soloOfertas}
+          onClick={() => setSoloOfertas((v) => !v)}
+          className={`${pill} ${soloOfertas ? "bg-neutral-950 text-white" : "bg-white text-neutral-700"}`}
+        >
+          Solo ofertas
+        </button>
+        <button
+          type="button"
+          aria-pressed={soloDisponibles}
+          onClick={() => setSoloDisponibles((v) => !v)}
+          className={`${pill} ${soloDisponibles ? "bg-neutral-950 text-white" : "bg-white text-neutral-700"}`}
+        >
+          Solo disponibles
+        </button>
+        <select
+          value={orden}
+          onChange={(e) => setOrden(e.target.value)}
+          aria-label="Ordenar productos"
+          className={`${pill} bg-white text-neutral-700`}
+        >
+          <option value="">Ordenar por</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre">Nombre (A-Z)</option>
+        </select>
+      </div>
 
       {cargando && (
         <div>
@@ -76,7 +122,8 @@ export default function Catalogo({ busqueda }: { busqueda: string }) {
         <p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>
       )}
 
-      {!cargando && !error && <ProductList productos={productosFiltrados} />}
+      {!cargando && !error && <ProductList productos={productosFiltrados} onSeleccionar={setSeleccionado} />}
+      {!cargando && !error && <Recomendados base={seleccionado} onSeleccionar={setSeleccionado} />}
     </main>
   )
 }

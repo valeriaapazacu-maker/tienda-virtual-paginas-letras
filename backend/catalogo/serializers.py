@@ -10,7 +10,11 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 class ProductoSerializer(serializers.ModelSerializer):
     categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True)
+    precio_final = serializers.DecimalField(max_digits=8, decimal_places=2, read_only=True)
+    estado_stock = serializers.CharField(read_only=True)
 
     class Meta:
         model = Producto
-        fields = ["id", "nombre", "descripcion", "precio", "imagen", "stock", "categoria", "categoria_nombre"]
+        fields = ["id", "nombre", "descripcion", "precio", "imagen", "stock",
+                  "categoria", "categoria_nombre", "descuento", "destacado",
+                  "stock_minimo", "precio_final", "estado_stock"]

@@ -12,3 +12,4 @@ async function get<T>(ruta: string): Promise<T> {
 
 export const getProductos = () => get<Producto[]>("/productos/")
 export const getCategorias = () => get<Categoria[]>("/categorias/")
+export const getRecomendados = (id: number) => get<Producto[]>(`/productos/${id}/recomendados/`)

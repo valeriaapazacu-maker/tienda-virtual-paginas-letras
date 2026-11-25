@@ -3,6 +3,7 @@ from .views import CategoriaViewSet, ProductoViewSet
 
 router = DefaultRouter()
 router.register("categorias", CategoriaViewSet)
-router.register("productos", ProductoViewSet)
+router.register("productos", ProductoViewSet, basename="producto")
+
 
 urlpatterns = router.urls
